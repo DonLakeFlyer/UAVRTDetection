@@ -1,0 +1,9 @@
+See https://docs.scipy.org/doc/numpy-1.15.0/user/numpy-for-matlab-users.html#numpy-for-matlab-users-notes
+
+matlab -> python
+three dimensional arrays
+zeros(3) -> np.zeros((3, 3))
+any(a != b, 'all') -> np.any(np.not_equal(a,b))
+
+Creating an array mask and then replacing elements
+See WaveformSTFT::updatePSD

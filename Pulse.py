@@ -1,3 +1,5 @@
+import numpy as np
+
 class Pulse:
 #    properties
 #        A           %Amplitude
@@ -15,7 +17,16 @@ class Pulse:
 #        con_dec     %Was the pulse confirmed (true/false). In tracking, no confirmation step is executed so we record false.
 #    end
     
-    def __init__(self, amplitude, yw, snr, startTime, endTime, nextTimeRange, peakFreq, freqStart, freqEnd):
+    def __init__(self, 
+                    amplitude:      float       = np.nan, 
+                    yw:             float       = np.nan, 
+                    snr:            float       = np.nan, 
+                    startTime:      float       = np.nan, 
+                    endTime:        float       = np.nan, 
+                    nextTimeRange:  np.ndarray  = np.array((np.nan, np.nan)), 
+                    peakFreq:       float       = np.nan, 
+                    freqStart:      float       = np.nan, 
+                    freqEnd:        float       = np.nan):
         self.amplitude      = amplitude         # A
         self.yw             = yw                # yw
         self.snr            = snr               # SNR
@@ -25,3 +36,6 @@ class Pulse:
         self.peakFreq       = peakFreq          # fp
         self.freqStart      = freqStart         # fstart
         self.freqEnd        = freqEnd           # fend
+        self.mode           = "unknown"
+        self.deteced        = False
+        self.confirmed      = False

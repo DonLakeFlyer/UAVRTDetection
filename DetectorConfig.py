@@ -37,7 +37,7 @@ class DetectorConfig:
         self.dataPort                   = config[tagSection].getint("dataPort")
         self.sampleRateHz               = config[tagSection].getfloat("sampleRateHz")
         self.tagFreqMHz                 = config[tagSection].getfloat("tagFreqMHz")
-        self.pulseWidthSecs             = config[tagSection].getfloat("pulseWidthSecs")
+        self.pulseDurationSecs          = config[tagSection].getfloat("pulseDurationSecs")
         self.intraPulseSecs             = config[tagSection].getfloat("intraPulseSecs")
         self.intraPulseUncertaintySecs  = config[tagSection].getfloat("intraPulseUncertainty")
         self.intraPulseJitterSecs       = config[tagSection].getfloat("intraPulseJitter")
