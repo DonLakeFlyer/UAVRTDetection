@@ -2,6 +2,7 @@ import matlab
 
 import numpy as np
 import math
+import scipy
 
 # function [xout] = fftshiftstft(x)
 def fftShiftSTFT(x: np.ndarray):
@@ -39,8 +40,8 @@ def fftShiftSTFT(x: np.ndarray):
     # 
     # # 
 
-    if x.ndim != 1:
-        raise Exception("Only accepts vector")
+    if x.ndim > 2:
+        raise Exception("Only accepts 1D or 2D data")
 
     # sz = size(x);
     # if sz(1)==1 && sz(2)~= sz(1) # Passed a row vector
@@ -55,8 +56,18 @@ def fftShiftSTFT(x: np.ndarray):
     #     xout = circshift(fftshift(x,dim2shift),-1,dim2shift);
     # end
 
-    n = len(x);
-    if math.fmod(n, 2):
-        xout = matlab.fftshift(x);    
-    else:
-        xout = matlab.circshift(matlab.fftshift(x),-1);
+    n = len(x)
+    noCircshift = not math.fmod(n, 2)
+
+    if x.ndim == 1:
+        # row vector
+        if noCircshift:
+            return scipy.fft.fftshift(x)
+        else:
+            xout = np.roll(scipy.fft.fftshift(x), -1)
+    else: 
+        # matrix
+        if noCircshift:
+            return scipy.fft.fftshift(x, axes = (1,))
+        else:
+            xout = np.roll(scipy.fft.fftshift(x, axes = (1,)), -1, axis = 1)

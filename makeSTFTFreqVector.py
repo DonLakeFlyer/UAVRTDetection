@@ -57,13 +57,15 @@ def makeSTFTFreqVector(nfft: int, frequencyRangeType:str, Fs: float):
             freqs = matlab.range(math.ceil(-nfft / 2), math.floor(nfft / 2)) * (Fs / nfft);
     elif frequencyRangeType == 'twosided':
         # freqs = (0:(nfft-1))*Fs/(nfft);
-        freqs = matlab.range(0, (nfft - 1)) * (Fs/nfft);
+        freqs = matlab.siVector(0, (nfft - 1)) * (Fs/nfft);
     elif frequencyRangeType == 'onesided':
         if math.fmod(nfft, 2) == 0:
             # freqs = (0:nfft/2)*Fs/nfft;
-            freqs = matlab.range(0, nfft/2) * (Fs / nfft);
+            freqs = matlab.siVector(0, nfft/2) * (Fs / nfft);
         else:
             # freqs = (0:floor(nfft/2))*Fs/nfft;
-            freqs = matlab.range(0, math.floor(nfft / 2)) * (Fs / nfft);
+            freqs = matlab.siVector(0, math.floor(nfft / 2)) * (Fs / nfft);
     else:
         raise Exception("Invalid frequencyRangeType")
+
+    return freqs

@@ -204,6 +204,7 @@ class Waveform:
 
         # obj.stft = wfmstft(obj);
         obj.stft = WaveformSTFT.WaveformSTFT(obj)
+        print("Waveform.stft.S.shape", obj.stft.S.shape)
 
     # function [wfmout] = leave(obj,K,t0,ps_pre)
     def leave(obj, K: float, *args): # args - t0: float, ps_pre: PulseStats
@@ -392,7 +393,6 @@ class Waveform:
         n_ws = n_w-n_ol;                # Number of elements in each step of STFT
         t_ws = n_ws/obj.Fs;             # Time of each step of STFT
         
-        print("Waveform::getPrioriDependentProps ps_obj", ps_obj)
         n_ip  = math.ceil(ps_obj.t_ip * obj.Fs);
         n_ipu = math.ceil(ps_obj.t_ipu * obj.Fs);
         n_ipj = math.ceil(ps_obj.t_ipj*obj.Fs);

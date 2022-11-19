@@ -1,4 +1,5 @@
-import generatePulsePositionsMatrix
+from generatePulsePositionsMatrix import *
+import matlab as ml
 
 import numpy as np
 import scipy
@@ -70,15 +71,16 @@ def assembleWq(PRI_means_q: np.ndarray, PRI_jitters_q: np.ndarray, K: float):
     # WqColInds   = repmat(1:ppmBigRows,1,ppmCols);
     # WqElements  = ones(size(WqRowInds));
     # Wq          = sparse(WqRowInds(:),WqColInds(:),WqElements(:));
-    ppmRows     = pulsePositionMatrix.shape[0]                          # Number of rows in pulse_position_matrix
-    ppmCols     = pulsePositionMatrix.shape[1]                          # Number of cols in pulse_position_matrix --- should always be K
-    ppmBig      = pulsePositionMatrix.tile((n_shifts + 1, 1))           # Create multiple copies of the PPM matrix. Each copy will eventually be shifted. The second copy will get a 1 added to it, the third a 2 added, and so on up to n_shifts. Use n_shifts+1 to account for the first one that receives no shifting.
-    ppmBig      = pulsePositionMatrix.tile((n_shifts + 1, 1))           # Create multiple copies of the PPM matrix. Each copy will eventually be shifted. The second copy will get a 1 added to it, the third a 2 added, and so on up to n_shifts. Use n_shifts+1 to account for the first one that receives no shifting.
-    ppmBigRows  = ppmBig.shape[0]                                       # Get the number of rows in the big PPM matrix
-    shiftermat  = np.arange(n_shifts + 1).tile((ppmRows, 1))            # Create a matrix of the shifts needed for each copy of the PPM matrix
-    WqRowInds   = shiftermat.reshape(-1, 1).tile((1, ppmCols)) + ppmBig 
-    WqColInds   = np.arange(ppmBigRows).tile((1, ppmCols))
-    WqElements  = np.ones(WqRowInds.shape)
-    Wq          = scipy.sparse.csr_array((WqRowInds.reshape(-1, 1), (WqColInds.reshape(-1, 1), WqElements.reshape(-1, 1))), dtype=np.float)
+    ppmRows     = pulsePositionMatrix.shape[0]                              # Number of rows in pulse_position_matrix
+    ppmCols     = pulsePositionMatrix.shape[1]                              # Number of cols in pulse_position_matrix --- should always be K
+    ppmBig      = np.tile(pulsePositionMatrix,      (n_shifts + 1, 1))      # Create multiple copies of the PPM matrix. Each copy will eventually be shifted. The second copy will get a 1 added to it, the third a 2 added, and so on up to n_shifts. Use n_shifts+1 to account for the first one that receives no shifting.
+    ppmBigRows  = ppmBig.shape[0]                                           # Get the number of rows in the big PPM matrix
+    shiftermat  = np.tile(ml.siVector(0, n_shifts), (ppmRows, 1))           # Create a matrix of the shifts needed for each copy of the PPM matrix
+    WqRowInds   = np.tile(shiftermat.reshape(-1,1), (1, ppmCols)) + ppmBig 
+    WqColInds   = np.tile(np.arange(ppmBigRows),    (1, ppmCols))
+    WqRowInds   = WqRowInds.ravel(order='F').astype(np.intc)
+    WqColInds   = WqColInds.ravel(order='F').astype(np.intc)
+    WqElements  = np.ones(len(WqRowInds))
+    Wq          = scipy.sparse.csr_array((WqElements, (WqRowInds, WqColInds)), dtype=np.float)
 
     return Wq

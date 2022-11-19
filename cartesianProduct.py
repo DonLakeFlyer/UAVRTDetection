@@ -20,7 +20,7 @@ def cartesianProduct(A: np.ndarray):
     num_cols_C = num_sets;
 
     #C = zeros( num_rows_C, num_cols_C );
-    C = np.zeros(num_rows_C, num_cols_C)
+    C = np.zeros((num_rows_C, num_cols_C))
 
     # loop through columns of C
 
@@ -48,7 +48,7 @@ def cartesianProduct(A: np.ndarray):
         # stride is number of elements to repeat in a column
         # num_strides is number of strides per column
         stride      = num_members_per_set ** (num_sets - i_col)
-        num_strides = num_rows_C / stride
+        num_strides = num_rows_C // stride
         i_col_A     = -1 # the column in A that we use
         for i_stride in range(num_strides):
             i_col_A = i_col_A + 1

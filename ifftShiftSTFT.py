@@ -2,6 +2,7 @@ import matlab
 
 import numpy as np
 import math
+import scipy
 
 # function [xout] = ifftshiftstft(x)
 def ifftShiftSTFT(x: np.ndarray):
@@ -51,14 +52,18 @@ def ifftShiftSTFT(x: np.ndarray):
     if x.ndim > 2:
         raise Exception("Only 1D and 2D are supported")
 
+    n = len(x)
+    noCircshift = not math.fmod(n, 2)
+
     if x.ndim == 1:
-        # Vector
-        dim2shift = 2;
-    else:
-        # Array
-        dim2shift = 1;
-    n = matlab.numel(x);
-    if matlab.mod(n, 2):
-        xout = matlab.ifftshift(x, dim2shift);    
-    else:
-        xout = matlab.ifftshift(matlab.circshift(x, 1, dim2shift), dim2shift);
+        # row vector
+        if noCircshift:
+            return scipy.fft.ifftshift(x)
+        else:
+            xout = np.roll(scipy.fft.ifftshift(x), -1)
+    else: 
+        # matrix
+        if noCircshift:
+            return scipy.fft.ifftshift(x, axes = (1,))
+        else:
+            xout = np.roll(scipy.fft.ifftshift(x, axes = (1,)), -1, axis = 1)

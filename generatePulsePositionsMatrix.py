@@ -1,9 +1,10 @@
-import cartesianProduct
+from cartesianProduct import *
+import matlab
 
 import numpy as np
 
 #function pulse_position_matrix = generate_pulse_positions_func( K, PRI_mean_value, PRI_jitter_value )
-def generatePulsePositionsMatirx(K: float, PRI_mean_value: np.ndarray, PRI_jitter_value: np.ndarray):
+def generatePulsePositionsMatrix(K: float, PRI_mean_value: np.ndarray, PRI_jitter_value: np.ndarray):
     # INPUTS:
     #   PRI_mean_value          row vector of PRI means (scale/index is STFT step
     #                           size)
@@ -28,21 +29,22 @@ def generatePulsePositionsMatirx(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     num_PRI_means       = len(PRI_mean_value)
     num_PRI_jitters     = len(PRI_jitter_value)
     num_PRI_patterns    = num_PRI_means * num_PRI_jitters ** (K - 1)
+    print("gppm", num_PRI_means, num_PRI_jitters, num_PRI_patterns)
 
     # place first pulse at pulse position q = 1
 
     # pulse_position_matrix = zeros( num_PRI_patterns, K );
     # pulse_position_matrix( :, 1 ) = ones( num_PRI_patterns, 1 );
-    pulse_position_matrix       = np.zeros(num_PRI_patterns, K);
-    pulse_position_matrix[:, 0] = np.ones(num_PRI_patterns);
+    pulse_position_matrix       = np.zeros  ((num_PRI_patterns, K));
+    pulse_position_matrix[:, 0] = np.ones   ((num_PRI_patterns));
 
     # based on the model, generate all the pulse position values in a 3D matrix
     # pulse_position_value(k, i_position, i_mean )
     
     # pulse_position_value = zeros( K, num_PRI_jitters, num_PRI_means );
     # pulse_position_value( 1, :, : ) = 1; # first pulse is always in position 1
-    pulse_position_value = np.zeros(num_PRI_means, K, num_PRI_jitters)
-    pulse_position_value[:, :, 0] = 1; # first pulse is always in position 1
+    pulse_position_value = np.zeros((K, num_PRI_jitters, num_PRI_means))
+    pulse_position_value[0, :, :] = 1; # first pulse is always in position 1
     
     # loop through the mean PRI values
 
@@ -55,10 +57,11 @@ def generatePulsePositionsMatirx(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     #     end
     # end
     for i_mean in range(num_PRI_means):
-        for k in range(2, K + 1):
+        for k in range(1, K):
             for i_jitter in range(num_PRI_jitters):
-                pulse_position_value[i_mean, k, i_jitter] = 1 + (k - 1) * PRI_mean_value[i_mean] + PRI_jitter_value[i_jitter]
+                pulse_position_value[k, i_jitter, i_mean] = 1 + (k - 1) * PRI_mean_value[i_mean] + PRI_jitter_value[i_jitter]
 
+    print(pulse_position_value)
     # generate the pulse_position_matrix by considering
     # all possible combinations of the values;
     # each row is for one pattern, there are K columns;
@@ -74,7 +77,7 @@ def generatePulsePositionsMatirx(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     # num_position_patterns = num_PRI_means*num_PRI_jitters^(K-1);
     # pulse_position_matrix = zeros( num_position_patterns, K-1 );
     num_position_patterns = num_PRI_means * num_PRI_jitters ** (K - 1)
-    pulse_position_matrix = np.zeros(num_position_patterns, K - 1)
+    pulse_position_matrix = np.zeros((num_position_patterns, K - 1))
 
     # n_rows = num_PRI_jitters^(K-1); # number of rows per PRI mean
     # for i_set = 1:num_PRI_means
@@ -89,14 +92,17 @@ def generatePulsePositionsMatirx(K: float, PRI_mean_value: np.ndarray, PRI_jitte
         # since pattern is "fundamental" pattern starting with a pulse in the
         # first STFT window, we only need to look at combinations
         # rows 2:end, and then add the column of ones
-        pattern_matrix = cartesianProduct(pulse_position_value[i_set, 1:, :])
+        pattern_matrix = cartesianProduct(pulse_position_value[ 1:, :, i_set ])
         pulse_position_matrix[(i_set * n_rows) : (i_set + 1) * n_rows, : ] = pattern_matrix
 
+
     # pulse_position_matrix = horzcat( ones( num_position_patterns, 1 ), pulse_position_matrix );
-    pulse_position_matrix = np.hstack((np.ones(num_position_patterns), pulse_position_matrix))
+    pulse_position_matrix = np.concatenate((np.ones((num_position_patterns)).reshape((-1,1)), pulse_position_matrix), axis=1)
 
     # remove duplicate patterns
     # pulse_position_matrix = unique( pulse_position_matrix, 'rows');
     pulse_position_matrix = np.unique(pulse_position_matrix, axis = 0)
+
+    print("pulsePositionMatrix.shape", pulse_position_matrix.shape, K)
 
     return pulse_position_matrix

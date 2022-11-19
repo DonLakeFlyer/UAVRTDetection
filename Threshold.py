@@ -1,7 +1,7 @@
-import buildTimeCorrelatorMatrix
-import evfit
-import wgn
-import interp1
+from buildTimeCorrelatorMatrix import *
+from evfit import *
+from wgn import *
+from interp1 import *
 import matlab
 
 import numpy as np
@@ -146,6 +146,7 @@ class Threshold:
         #     error('UAV-RT: Time correlator/selection matrix must have the same number of rows as the number of columns (time windows) in the waveforms STFT matrix.')
         # end
         Wq = buildTimeCorrelatorMatrix(Wfm.N, Wfm.M, Wfm.J, Wfm.K);
+        print(nTimeWinds, Wq.shape)
         if nTimeWinds != np.shape(Wq)[0]:
             raise Exception('UAV-RT: Time correlator/selection matrix must have the same number of rows as the number of columns (time windows) in the waveforms STFT matrix.')
 

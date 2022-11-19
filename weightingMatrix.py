@@ -1,7 +1,7 @@
-import makeSTFTFreqVector
+from  makeSTFTFreqVector import *
 import matlab
-import fftShiftSTFT
-import ifftShiftSTFT
+from fftShiftSTFT import *
+from ifftShiftSTFT import *
 
 import numpy as np
 import scipy as sp
@@ -102,8 +102,6 @@ def weightingMatrix(x_of_n_in: np.ndarray, Fs: float, zetas: np.ndarray, frequen
         raise Exception('Input x_of_n_in must be a vector')
     if Fs <= 0:
         raise Exception('Fs input must be a positive scalar. ')
-    if zetas.ndim != 1 or zetas.dtype != float:
-        raise Exception('Zetas input must be a real valued vector')
     if max(zetas) >= 1:
         raise Exception('Maximum input interbin fractions (zeta) must be less than 1.')
     if min(zetas) < 0:
@@ -131,8 +129,8 @@ def weightingMatrix(x_of_n_in: np.ndarray, Fs: float, zetas: np.ndarray, frequen
 
     # s	= 1i*zeros(nw,numZetas);
     # Xs  = 1i*zeros(nw,numZetas);
-    s	= np.empty(nw, numZetas, dtype = np.cdouble);
-    Xs	= np.empty(nw, numZetas, dtype = np.cdouble);
+    s	= np.zeros((nw, numZetas), dtype = np.cdouble);
+    Xs	= np.zeros((nw, numZetas), dtype = np.cdouble);
 
     # for i = 1:numZetas
     #     s(:,i)  = exp(1i*2*pi*zetas(i)*n./nw);
@@ -151,12 +149,14 @@ def weightingMatrix(x_of_n_in: np.ndarray, Fs: float, zetas: np.ndarray, frequen
     #     stackedToeplitzMatrices(rowStart:rowEnd,:) = toeplitz(Xs(:,i),[Xs(1,i); flipud(Xs(2:end,i))]);    
     # end
     stackedToeplitzMatrices = np.empty((numZetas * nw, nw), dtype = np.cdouble);
+    np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)
     for i in range(numZetas):
         rowStart    = i * nw
         rowEnd      = rowStart + nw
         c           = Xs[:, i]
-        r           = [ Xs[0, i], np.flipud(Xs[1:, i]) ]    
-        stackedToeplitzMatrices[rowStart:rowEnd,:] = sp.linalg.toeplitz(c, r) 
+        r           = np.array(Xs[0, i])
+        r           = np.append(r, np.flipud(Xs[1:, i]))
+        stackedToeplitzMatrices[rowStart:rowEnd,:] = sp.linalg.toeplitz(c, r)
 
     # Reshape in this way will interweave rows of each sub matrix of the stack
     W = matlab.reshape(stackedToeplitzMatrices, nw, numZetas * nw);
@@ -166,7 +166,7 @@ def weightingMatrix(x_of_n_in: np.ndarray, Fs: float, zetas: np.ndarray, frequen
 
     # Simulink (coder?) didn't like the new round inputs
     # freqs = round(freqs*1000)/1000;
-    freqs = freqs.round(freqs * 1000) / 1000;
+    freqs = np.round(freqs * 1000) / 1000;
 
     # Shift everything so we use a negative frequencies
 
@@ -181,9 +181,9 @@ def weightingMatrix(x_of_n_in: np.ndarray, Fs: float, zetas: np.ndarray, frequen
     # zero_padding = zeros(1,nyq_ind);
     # wrapper = [zero_padding,frequency_shift_amount*ones(1,numel(freqs)-nyq_ind)];
     # Wf = wrapper' + freqs';
-    Wf = np.zeroes(nyq_ind)
-    Wf.append(frequency_shift_amount * np.ones(len(freqs) - nyq_ind))
-    Wf.append(freqs)
+    Wf = np.zeros(nyq_ind)
+    np.append(Wf, frequency_shift_amount * np.ones(len(freqs) - nyq_ind))
+    np.append(Wf, freqs)
     Wf.transpose()
 
     # Here we sort the output to set up to have an ascending order of frequency

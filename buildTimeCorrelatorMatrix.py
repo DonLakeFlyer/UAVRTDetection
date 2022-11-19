@@ -1,4 +1,4 @@
-import assembleWq
+from assembleWq import *
 
 import numpy as np
 
@@ -17,8 +17,8 @@ def buildTimeCorrelatorMatrix(pri: float, priUncert: float, priJtr: float, reps:
 
     # priMeansList = zeros(1,2*priUncert+1);
     # priJtrList   = zeros(1,2*priJtr+1);
-    priMeansList = np.zeros(1, 2 * priUncert + 1)
-    priJtrList   = np.zeros(1, 2 * priJtr + 1)
+    priMeansList = np.zeros((1, 2 * priUncert + 1))
+    priJtrList   = np.zeros((1, 2 * priJtr + 1))
 
     # Change names to align with other code.
     N = pri

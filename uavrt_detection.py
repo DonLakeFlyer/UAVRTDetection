@@ -186,11 +186,11 @@ def uavrt_detection():
             X.K = Config.K;
             print('Current interpulse params || N: %d, M: %d, J: %d' % (int(X.N), int(X.M), int(X.J)))
             X.setPrioriDependentProps(X.ps_pre)
-            print('Samples in waveform: %d', len(X.x))
+            print('Samples in waveform: %d' % len(X.x))
             tictoc.tic()
             print('Computing STFT...')
             X.spectro();
-            print('complete. Elapsed time: %f seconds ', tictoc.toc())
+            print('complete. Elapsed time: %f seconds ' %  tictoc.tocvalue())
             print('Building weighting matrix and generating thresholds...')
             tictoc.tic()
             X.setWeightingMatrix(zetas);

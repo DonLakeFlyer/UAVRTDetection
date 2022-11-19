@@ -83,7 +83,7 @@ class PulseStats:
 #        cpki  (:,:)  double %These are the row indices of clst that were found to be peak (the center of the pulse frequency).
 #    end
 
-    def __init__ (self, t_p = 0, t_ip = 0, t_ipu = 0, t_ipj = 0, fp = 0):
+    def __init__ (self, t_p = 0, t_ip = 0, t_ipu = 0, t_ipj = 0, fp = 0, tmplt = [ 1, 1 ]):
         self.t_p    = t_p
         self.t_ip   = t_ip
         self.t_ipu  = t_ipu
@@ -91,7 +91,7 @@ class PulseStats:
         self.fp     = fp
         self.fstart = 0
         self.fend   = 0
-        self.tmplt  = None
+        self.tmplt  = tmplt
         self.mode   = 'D'
         self.pl     = None
         self.clst   = None
