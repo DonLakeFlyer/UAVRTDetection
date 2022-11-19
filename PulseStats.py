@@ -83,17 +83,35 @@ class PulseStats:
 #        cpki  (:,:)  double %These are the row indices of clst that were found to be peak (the center of the pulse frequency).
 #    end
 
-    def __init__ (self, tp = None, tip = None, tipu = None, tipj = None, fp = None):
-        self.t_p    = tp
-        self.t_ip   = tip
-        self.t_ipu  = tipu
-        self.t_ipj  = tipj
+    def __init__ (self, t_p = 0, t_ip = 0, t_ipu = 0, t_ipj = 0, fp = 0):
+        self.t_p    = t_p
+        self.t_ip   = t_ip
+        self.t_ipu  = t_ipu
+        self.t_ipj  = t_ipj
         self.fp     = fp
-        self.fstart = None
-        self.fend   = None
+        self.fstart = 0
+        self.fend   = 0
         self.tmplt  = None
         self.mode   = 'D'
         self.pl     = None
         self.clst   = None
         self.cmsk   = None
         self.cpki   = None
+        if self.t_p == 0:
+            print("PulseStats() self:%x" % id(self))
+            raise
+
+    def __str__(self): 
+        return "PulseStats(%x): t_p:%f t_ip:%f t_ipu:%f t_ipj:%f fp:%f" % (id(self), self.t_p, self.t_ip, self.t_ipu, self.t_ipj, self.fp)
+
+    def copy(self):
+        other = PulseStats(t_p = self.t_p, t_ip = self.t_ip, t_ipu = self.t_ipu, t_ipj = self.t_ipj, fp = self.fp)
+        other.fstart = self.fstart
+        other.fend   = self.fend
+        other.tmplt  = self.tmplt
+        other.mode   = self.mode
+        other.pl     = self.pl
+        other.clst   = self.clst
+        other.cmsk   = self.cmsk
+        other.cpki   = self.cpki
+        return other

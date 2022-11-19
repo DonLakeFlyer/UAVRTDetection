@@ -46,9 +46,12 @@ def updateBufferReadVariables(Config: DetectorConfig, ps_input: PulseStats, stft
     print('Updating buffer read vars|| N: %d u, M: %d u, J: %d u' % (int(N), int(M), int(J)))
     print('Updating buffer read vars|| sampForKPulses: %d u,  overlapSamples: %d u,' % (int(sampsForKPulses), int(overlapSamples)))
 
+    return sampsForKPulses, overlapSamples
+
 # function [] = uavrt_detection()
 def uavrt_detection():
     Config =  DetectorConfig();
+    print(Config)
 
     # Initialize states for operational modes
     if Config.opMode == 'freqSearchHardLock':
@@ -62,16 +65,15 @@ def uavrt_detection():
     else:
         fLock = False;
 
-    pulseStatsPriori = PulseStats(tp = Config.tp, tip = Config.tip, tipu = Config.tipu, tipj = Config.tipj)
+    prioriRelativeFreqHz = 10e-6 * abs(Config.tagFreqMHz - Config.channelCenterFreqMHz);
+    ps_pre = PulseStats(t_p = Config.tp, t_ip = Config.tip, t_ipu = Config.tipu, t_ipj = Config.tipj, fp = prioriRelativeFreqHz)
 
     stftOverlapFraction = 0.5;
     zetas               = [ 0, 0.5 ];
     pauseWhenIdleTime   = 0.25;
 
     # Initialize and then set these variable needed for buffer reads
-    overlapSamples	= 0;
-    sampsForKPulses = 0;
-    updateBufferReadVariables(Config, pulseStatsPriori);
+    sampsForKPulses, overlapSamples = updateBufferReadVariables(Config, ps_pre, stftOverlapFraction);
 
     packetLength = 1025; # 1024 plus a time stamp.
     print('Startup set 1 complete.')
@@ -88,8 +90,8 @@ def uavrt_detection():
     #  [~,~,~,maxn_ws,~,~,maxN,maxM] = Xmax.getprioridependentprops(Xmax.ps_pre);
     #  sampsForMaxPulses = maxK*maxn_ws*(maxN+maxM+1+1);
     sampsForMaxPulses = 24810 * 2;
-    asyncDataBuff = AsyncBuffer(sampsForMaxPulses);
-    asyncTimeBuff = AsyncBuffer(sampsForMaxPulses);
+    asyncDataBuff = AsyncBuffer(sampsForMaxPulses, np.csingle);
+    asyncTimeBuff = AsyncBuffer(sampsForMaxPulses, float);
     print('Startup set 2 complete')
     dataWriterTimeIntervalNominal   = 10; # Write interval in seconds. 2.5*60*4000*32/8 should work out the 2.4Mb of data at 4ksps.
     dataWriterPacketsPerInterval    = math.ceil(dataWriterTimeIntervalNominal / ((packetLength - 1) / Config.Fs));
@@ -103,8 +105,6 @@ def uavrt_detection():
         dataWriterFileID = None
 
     print('Startup set 3 complete.')
-
-    ps_pre = PulseStats()
 
     print('Startup set 5 complete.')
 
@@ -140,7 +140,7 @@ def uavrt_detection():
 
         # #  Flush UDP buffer if data in the buffer is stale.
         if staleDataFlag:
-            print('********STALE DATA FLAG: %s u *********', staleDataFlag);
+            print('********STALE DATA FLAG: %s *********' %  staleDataFlag);
             udpReceiver.clear()
             staleDataFlag = False;
 
@@ -157,9 +157,9 @@ def uavrt_detection():
         asyncTimeBuff.write(timeVector);
 
         # #  Process data if there is enough in the buffers
-        if asyncDataBuff.NumUnreadSamples >= sampsForKPulses + overlapSamples:
-            print('Buffer Full|| sampsForKPulses: %d, overlapSamples: %d,' % (int(sampsForKPulses), int(overlapSamples)))
-            print('Running...Buffer full with %d samples. Processing. ' % asyncDataBuff.NumUnreadSamples)
+        if asyncDataBuff.numUnreadSamples() >= sampsForKPulses + overlapSamples:
+            print('Buffer Full - sampsForKPulses: %d, overlapSamples: %d,' % (int(sampsForKPulses), int(overlapSamples)))
+            print('Running...Buffer full with %d samples. Processing. ' % asyncDataBuff.numUnreadSamples())
             
             tictoc.tic()
             if cleanBuffer:
@@ -182,7 +182,7 @@ def uavrt_detection():
 
             # #  PRIMARY PROCESSING BLOCK
             # Prep waveform for processing/detection
-            X = Waveform(x, Config.Fs, t0, ps_pre, stftOverlapFraction, Threshold(Config.FalseAlarmProb));
+            X = Waveform(x, Config.Fs, t0, ps_pre, stftOverlapFraction, Threshold(Config.falseAlarmProb));
             X.K = Config.K;
             print('Current interpulse params || N: %d, M: %d, J: %d' % (int(X.N), int(X.M), int(X.J)))
             X.setPrioriDependentProps(X.ps_pre)
@@ -263,7 +263,7 @@ def uavrt_detection():
             print('Updating priori...')
             ps_pre = X.ps_pos.deepcopy();
 
-            updateBufferReadVariables(X.ps_pos);
+            sampsFprKPulses, overlapSamples = updateBufferReadVariables(X.ps_pos);
             print('complete. Elapsed time: %f seconds ', tictoc.toc())
 
             Xhold = X.deepcopy()

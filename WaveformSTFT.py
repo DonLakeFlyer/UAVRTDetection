@@ -1,5 +1,5 @@
-import Waveform
-import movingMean
+from movingMean import movingMean
+from vectorTranspose import vectorTranspose
 
 import scipy
 import numpy as np
@@ -52,7 +52,7 @@ class WaveformSTFT:
     
     # methods
     #     function obj = wfmstft(waveform_obj)
-    def __init__ (self, waveform_obj: Waveform):
+    def __init__ (self, waveform_obj):
         # WFMSTFT Constructs and returns an instance of this class
         # 
         # An waveform object must be passed to this construction method
@@ -95,11 +95,13 @@ class WaveformSTFT:
         self.wind = scipy.signal.windows.boxcar(waveform_obj.n_w)
 
         # [S, self.f, local_time] = stft(waveform_obj.x,waveform_obj.Fs,'Window',self.wind,'OverlapLength',waveform_obj.n_ol,'FFTLength',waveform_obj.n_w);
+        # FIXME: Need correct stft setup from Michael
         self.f, local_time, S = scipy.signal.stft(
                                         waveform_obj.x, 
                                         waveform_obj.Fs,
                                         window      = self.wind,
                                         noverlap    = waveform_obj.n_ol,
+                                        nperseg     = waveform_obj.n_w,
                                         nfft        = waveform_obj.n_w)
 
         # self.S = double(S);#  Incoming x data in waveform is single precision, but sparse matrix multipliation later is only supported for double precision.
@@ -114,7 +116,7 @@ class WaveformSTFT:
         self.t  = local_time.astype(np.double) + waveform_obj.t_0; 
         self.dt = 1 / waveform_obj.Fs;
         self.T  = waveform_obj.n_w / waveform_obj.Fs;
-        self.updatePsd();
+        self.updatePSD();
         # end
         
     # function [] = adddata(obj,Snew,tnew)
@@ -134,7 +136,7 @@ class WaveformSTFT:
         # self.updatesd();
         self.S.append(Snew)
         self.t.append(tnew)
-        self.updatePsd();
+        self.updatePSD();
         
     # function [] = setfreqs(obj,freqs)
     def setFreqs(self, freqs):
@@ -178,8 +180,9 @@ class WaveformSTFT:
         # magSqrd(magSqrdMask) = NaN;
         magSqrd                 = self.S ** 2;
         movMeanMagSqrd          = movingMean(magSqrd, 3, axis = 1);
-        medMovMeanMagSqrd       = movMeanMagSqrd.median(axis = 1);
-        medMovMeanMagSqrdMat    = medMovMeanMagSqrd.tile((1, magSqrd.shape[1]));
+        medMovMeanMagSqrd       = np.median(movMeanMagSqrd, axis = 1);
+        medMovMeanMagSqrd       = vectorTranspose(medMovMeanMagSqrd)
+        medMovMeanMagSqrdMat    = np.tile(medMovMeanMagSqrd, (1, magSqrd.shape[1]));
         magSqrdMask             = np.ma.masked_where(magSqrd > 10 * medMovMeanMagSqrdMat, magSqrd);
         magSqrd                 = magSqrdMask.filled(np.nan);
 

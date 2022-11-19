@@ -1,7 +1,7 @@
 import numpy as np
 import bottleneck
 
-def movingMean(a: np.ndarry, k: int, axis: int = 0):
+def movingMean(a: np.ndarray, k: int, axis: int = 0):
     # Example:
     #   movingMean(a, k) equates to matlab movmean(a, k)
     #   movingMean(a, k, axis = 0) equates to matlab movmean(a, k, 1)

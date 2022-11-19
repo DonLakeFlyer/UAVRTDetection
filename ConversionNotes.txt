@@ -4,6 +4,7 @@ matlab -> python
 three dimensional arrays
 zeros(3) -> np.zeros((3, 3))
 any(a != b, 'all') -> np.any(np.not_equal(a,b))
+range - (x: y) -> matlabRange(x, y)
 
 Creating an array mask and then replacing elements
 See WaveformSTFT::updatePSD

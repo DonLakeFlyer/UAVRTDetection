@@ -31,16 +31,20 @@ class DetectorConfig:
         config = configparser.ConfigParser()
         config.read("DetectorConfig.ini")
 
-        self.tagId                      = config[tagSection].getint("tagId")
-        self.centerFreq                 = config[tagSection].getfloat("centerFreqMHz")
-        self.dataIp                     = config[tagSection]["dataIp"]
-        self.dataPort                   = config[tagSection].getint("dataPort")
-        self.sampleRateHz               = config[tagSection].getfloat("sampleRateHz")
-        self.tagFreqMHz                 = config[tagSection].getfloat("tagFreqMHz")
-        self.pulseDurationSecs          = config[tagSection].getfloat("pulseDurationSecs")
-        self.intraPulseSecs             = config[tagSection].getfloat("intraPulseSecs")
-        self.intraPulseUncertaintySecs  = config[tagSection].getfloat("intraPulseUncertainty")
-        self.intraPulseJitterSecs       = config[tagSection].getfloat("intraPulseJitter")
-        self.k                          = config[tagSection].getint("k")
-        self.opMode                     = config[tagSection]["opMode"]
-        self.falseAlarmProb             = config[tagSection].getfloat("falseAlarmProb")
+        self.tagId                  = config[tagSection].getint("id")
+        self.channelCenterFreqMHz   = config[tagSection].getfloat("centerFreqMHz")
+        self.ipData                 = config[tagSection]["dataIp"]
+        self.portData               = config[tagSection].getint("dataPort")
+        self.Fs                     = config[tagSection].getfloat("sampleRateHz")
+        self.tagFreqMHz             = config[tagSection].getfloat("tagFreqMHz")
+        self.tp                     = config[tagSection].getfloat("pulseDurationSecs")
+        self.tip                    = config[tagSection].getfloat("intraPulseSecs")
+        self.tipu                   = config[tagSection].getfloat("intraPulseUncertaintySecs")
+        self.tipj                   = config[tagSection].getfloat("intraPulseJitterSecs")
+        self.K                      = config[tagSection].getint("k")
+        self.opMode                 = config[tagSection]["opMode"]
+        self.falseAlarmProb         = config[tagSection].getfloat("falseAlarmProb")
+
+    def __str__(self): 
+        return "DetectorConfig(%x): tagId:%d channelCenterFreqMHz:%f ipData:%s, portData:%d Fs:%f tp:%f tip:%f tipu:%f tipj:%f K:%d" % \
+            (id(self), self.tagId, self.channelCenterFreqMHz, self.ipData, self.portData, self.Fs, self.tp, self.tip, self.tipu, self.tipj, self.K)

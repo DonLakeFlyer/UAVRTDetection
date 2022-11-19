@@ -1,9 +1,8 @@
-import Waveform
 import buildTimeCorrelatorMatrix
 import evfit
 import wgn
 import interp1
-import matlabFind
+import matlab
 
 import numpy as np
 import scipy
@@ -42,7 +41,7 @@ class Threshold:
         self.threshVecFine      = 0
 
     # function [obj] = setthreshold(obj, WfmCurr, WfmPrev)
-    def setThreshold(self, waveformCurr: Waveform, waveformPrev: Waveform):
+    def setThreshold(self, waveformCurr, waveformPrev):
         #Wq depends on N M J K
         #if old and new N, M, J, K, W, Wf are the same
         #   copy over the fit parameters from prev to curr then 
@@ -89,7 +88,7 @@ class Threshold:
         thresh   = scipy.optimize.fsolve(self._theFunc, np.zeros(1), args = (self.evMuParam, self.evSigmaParam, self.pf));                    
         
     # function [obj] = updatepf(obj, Wfm, pfNew)
-    def updatePf(self, waveform: Waveform, pfNew):
+    def updatePf(self, waveform, pfNew):
         # fprintf('%f\n',obj.evMuParam)
         # fprintf('%f\n',obj.evMuParam)
         # fprintf('%f\n',obj.pf)
@@ -105,7 +104,7 @@ class Threshold:
         self.setThreshProps(thresh, waveform);   # Set thresholds for each bin based on their bin powers
 
     # function [obj] = makenewthreshold(obj, Wfm)
-    def makeNewThreshold(self, Wfm: Waveform):
+    def makeNewThreshold(self, Wfm):
         # BUILDTHRESHOLD generates a threshold vector for the waveform argument
         # based on the false alarm probability input.
         # 
@@ -229,8 +228,8 @@ class Threshold:
         # firstTrueThreshInd = find(~isnanThreshLogic, 1,'first');
         # lastTrueThreshInd  = find(~isnanThreshLogic, 1,'last');
         isnanThreshLogic   = np.isnotnan(newThresh);
-        firstTrueThreshInd = matlabFind(isnanThreshLogic, 1, 'first')
-        lastTrueThreshInd  = matlabFind(isnanThreshLogic, 1, 'last')
+        firstTrueThreshInd = matlab.find(isnanThreshLogic, 1, 'first')
+        lastTrueThreshInd  = matlab.find(isnanThreshLogic, 1, 'last')
 
         firstTrueThresh    = newThresh[firstTrueThreshInd];
         lastTrueThresh     = newThresh[lastTrueThreshInd];
