@@ -29,7 +29,6 @@ def generatePulsePositionsMatrix(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     num_PRI_means       = len(PRI_mean_value)
     num_PRI_jitters     = len(PRI_jitter_value)
     num_PRI_patterns    = num_PRI_means * num_PRI_jitters ** (K - 1)
-    print("gppm", num_PRI_means, num_PRI_jitters, num_PRI_patterns)
 
     # place first pulse at pulse position q = 1
 
@@ -59,9 +58,8 @@ def generatePulsePositionsMatrix(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     for i_mean in range(num_PRI_means):
         for k in range(1, K):
             for i_jitter in range(num_PRI_jitters):
-                pulse_position_value[k, i_jitter, i_mean] = 1 + (k - 1) * PRI_mean_value[i_mean] + PRI_jitter_value[i_jitter]
+                pulse_position_value[k, i_jitter, i_mean] = 1 + k * PRI_mean_value[i_mean] + PRI_jitter_value[i_jitter]
 
-    print(pulse_position_value)
     # generate the pulse_position_matrix by considering
     # all possible combinations of the values;
     # each row is for one pattern, there are K columns;
@@ -85,7 +83,7 @@ def generatePulsePositionsMatrix(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     #     # first STFT window, we only need to look at combinations
     #     # rows 2:end, and then add the column of ones
     #     pattern_matrix = cartesian_prod_func( pulse_position_value( 2:end, :, i_set ) );
-    #     pulse_position_matrix( ( (i_set - 1)*n_rows + 1 ):i_set*n_rows, : ) = pattern_matrix;
+    #     pulse_position_matrix( ( (i_set - 1) * n_rows + 1 ) : i_set * n_rows, : ) = pattern_matrix;
     # end
     n_rows = num_PRI_jitters ** (K - 1) # number of rows per PRI mean
     for i_set in range(num_PRI_means):
@@ -102,7 +100,5 @@ def generatePulsePositionsMatrix(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     # remove duplicate patterns
     # pulse_position_matrix = unique( pulse_position_matrix, 'rows');
     pulse_position_matrix = np.unique(pulse_position_matrix, axis = 0)
-
-    print("pulsePositionMatrix.shape", pulse_position_matrix.shape, K)
 
     return pulse_position_matrix
