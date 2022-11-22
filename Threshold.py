@@ -1,12 +1,17 @@
 from buildTimeCorrelatorMatrix import *
 from evfit import *
 from wgn import *
-from interp1 import *
 import matlab
 
 import numpy as np
 import scipy
 from math import exp 
+from copy import *
+from pytictoc import TicToc
+
+def _theFunc(x, *args):
+    # theFunc  = @(x) 1 - exp(-exp((-x - mu) / sigma)) - pf;# Equivalent to 1-evcdf(x,mu,sigma)-pf
+    return [1 - exp(-exp((-x[0] - args[0]) / args[1])) - args[2]];  # Equivalent to 1-evcdf(x,mu,sigma)-pf
 
 # classdef threshold
 class Threshold:
@@ -34,14 +39,14 @@ class Threshold:
         # obj.threshVecFine    = 0;
 
         self.pf                 = pf
-        self.evMuParam          = 0
-        self.evSigmaParam       = 0
-        self.thresh1W           = 0  
-        self.threshVecCoarse    = 0
-        self.threshVecFine      = 0
+        self.evMuParam          = np.nan
+        self.evSigmaParam       = np.nan
+        self.thresh1W           = np.nan
+        self.threshVecCoarse    = None
+        self.threshVecFine      = None
 
     # function [obj] = setthreshold(obj, WfmCurr, WfmPrev)
-    def setThreshold(self, waveformCurr, waveformPrev):
+    def updateThresholdValuesIfNeeded(self, waveformCurr, waveformPrev):
         #Wq depends on N M J K
         #if old and new N, M, J, K, W, Wf are the same
         #   copy over the fit parameters from prev to curr then 
@@ -72,39 +77,28 @@ class Threshold:
         #     obj = obj.updatepf(WfmCurr, obj.pf); # Not actually updating the pf, just using the method to set all the other parameters
         # end
         if needsUpdate:
-            self.makeNewThreshold(waveformCurr);
+            self.generateThresholdValuesFromWaveform(waveformCurr);
         else:
             self.evMuParam    = waveformPrev.thresh.evMuParam;
             self.evSigmaParam = waveformPrev.thresh.evSigmaParam;
             self = self.updatePf(waveformCurr, self.pf); #Not actually updating the pf, just using the method to set all the other parameters
 
-    def _theFunc(x, *args):
-        # theFunc  = @(x) 1-exp(-exp((-x-mu)/sigma))-pf;# Equivalent to 1-evcdf(x,mu,sigma)-pf
-        return 1 - exp(-exp((-x - args[0]) / args[1])) - args[2];  # Equivalent to 1-evcdf(x,mu,sigma)-pf
-
-    def _evthresh(self):
+    def _evthresh(self, evMuParam, evSigmaParam, pf):
         #thresh   = fzero(theFunc,0);# theFunc monitonically decrease, so starting at x = 0 should always converge
         # theFunc monitonically decrease, so starting at x = 0 should always converge
-        thresh   = scipy.optimize.fsolve(self._theFunc, np.zeros(1), args = (self.evMuParam, self.evSigmaParam, self.pf));                    
+        return scipy.optimize.fsolve(_theFunc, [80000], args = (evMuParam, evSigmaParam, pf))[0];
         
     # function [obj] = updatepf(obj, Wfm, pfNew)
     def updatePf(self, waveform, pfNew):
-        # fprintf('%f\n',obj.evMuParam)
-        # fprintf('%f\n',obj.evMuParam)
-        # fprintf('%f\n',obj.pf)
-        print('%f' % self.evMuParam)
-        print('%f' % self.evMuParam)
-        print('%f' % self.pf)
-
         # obj.pf = pfNew;
         # thresh = evthresh(obj.evMuParam,obj.evSigmaParam, pfNew); # Build a single threshold value at 1 W bin power
         # obj    = obj.setthreshprops(thresh, Wfm);                   # Set thresholds for each bin based on their bin powers
         self.pf = pfNew
-        thresh = self._evthresh()           # Build a single threshold value at 1 W bin power
-        self.setThreshProps(thresh, waveform);   # Set thresholds for each bin based on their bin powers
+        thresh = self._evthresh(self.evMuParam, self.evSigmaParam, self.pf)           # Build a single threshold value at 1 W bin power
+        self._setThreshProps(thresh, waveform);   # Set thresholds for each bin based on their bin powers
 
     # function [obj] = makenewthreshold(obj, Wfm)
-    def makeNewThreshold(self, Wfm):
+    def generateThresholdValuesFromWaveform(self, Wfm):
         # BUILDTHRESHOLD generates a threshold vector for the waveform argument
         # based on the false alarm probability input.
         # 
@@ -146,7 +140,6 @@ class Threshold:
         #     error('UAV-RT: Time correlator/selection matrix must have the same number of rows as the number of columns (time windows) in the waveforms STFT matrix.')
         # end
         Wq = buildTimeCorrelatorMatrix(Wfm.N, Wfm.M, Wfm.J, Wfm.K);
-        print(nTimeWinds, Wq.shape)
         if nTimeWinds != np.shape(Wq)[0]:
             raise Exception('UAV-RT: Time correlator/selection matrix must have the same number of rows as the number of columns (time windows) in the waveforms STFT matrix.')
 
@@ -162,13 +155,27 @@ class Threshold:
         trials       = 100;                             # Number of sets of synthetic noise to generate
         scores       = np.zeros(trials);                # Preallocate the scores matrix
         Psynthall    = medPowAllFreqBins*nFreqBins;     # Calculate the total power in the waveform for all frequency bins. Units are W/bin * # bins = W
-        xsynth       = wgn(nSamps,trials,Psynthall);    # Generate the synthetic data
+        #xsynth       = wgn(nSamps,trials,Psynthall);    # Generate the synthetic data
         
-        # [Ssynth,~,~] = stft(xsynth,Wfm.Fs,'Window',Wfm.stft.wind,'OverlapLength',Wfm.n_ol,'FFTLength',Wfm.n_w);
-        Ssynth = scipy.signal.stft(xsynth, Wfm.Fs, window =Wfm.stft.wind, noverlap = Wfm.n_ol, nfft = Wfm.n_w)[2]
+        # Hack city
+        rng = np.random.default_rng()
+#        noise_power = 0.01 * Wfm.Fs / 2
+        noise_power = Psynthall * Wfm.Fs / 2
+        noise = rng.normal(scale=np.sqrt(noise_power), size=(trials, nSamps))
 
-        # Ssynth(:,nTimeWinds+1:end,:) = [];              # Trim excess so we have the correct number of windows.
-        Ssynth[:, nTimeWinds:, :] = [];              # Trim excess so we have the correct number of windows.
+        # [Ssynth,~,~] = stft(xsynth,Wfm.Fs,'Window',Wfm.stft.wind,'OverlapLength',Wfm.n_ol,'FFTLength',Wfm.n_w);
+        _, _, Ssynth = scipy.signal.stft(
+                                noise, 
+                                fs              = Wfm.Fs, 
+                                window          = Wfm.stft.wind, 
+                                noverlap        = Wfm.n_ol, 
+                                nperseg         = Wfm.n_w,
+                                nfft            = Wfm.n_w,
+                                boundary        = None,
+                                return_onesided = False)
+
+        #Ssynth(:,nTimeWinds+1:end,:) = [];              # Trim excess so we have the correct number of windows.
+        Ssynth = np.delete(Ssynth, Ssynth.shape[2] - nTimeWinds, 2)
 
         # Preform the incoherent summation using a matrix multiply.
         # Could use pagetimes.m for this, but it isn't supported for code generation
@@ -176,10 +183,12 @@ class Threshold:
         # for i = 1:trials
         #     scores(i) = max(abs(Wfm.W'*Ssynth(:,:,i)).^2 * Wq, [], 'all'); # 'all' call finds max across all temporal correlation sets and frequency bins just like we do in the dectection code.
         # end
+
+        a = Wfm.W.transpose()
         for i in range(trials):
             # 'all' call finds max across all temporal correlation sets and frequency bins just like we do in the dectection code.
-            absValues = abs(Wfm.W.transpose() * Ssynth[:, :, i])
-            scores[i] = np.amax(absValues ** 2 * Wq); 
+            absValues = np.abs(a @ Ssynth[i, :, :])
+            scores[i] = np.amax(absValues ** 2 @ Wq); 
 
         # Build the distribution for all scores.
         # Old kernel density estimation method
@@ -190,12 +199,12 @@ class Threshold:
         # paramEstsMaxima = evfit(-scores);
         # cdfVals = evcdf(-xi,paramEstsMaxima(1),paramEstsMaxima(2));
         # F = 1 - cdfVals;
-        paramEstsMaxima = evfit(-scores);
+        paramEstsMaxima = evfit((-scores).tolist());
         # mu              = paramEstsMaxima[1;
         # sigma           = paramEstsMaxima(2);
 
-        mu              = paramEstsMaxima[0];
-        sigma           = paramEstsMaxima[1];
+        mu              = paramEstsMaxima[0][0];
+        sigma           = paramEstsMaxima[1][0];
 
         threshMedPow    = self._evthresh(mu, sigma, PF);
         
@@ -218,7 +227,7 @@ class Threshold:
         # newThresh = interp1(powGrid,threshGrid,freqBinPow,'linear','extrap');
         powGrid    = [0, pow];
         threshGrid = [0, thresh];
-        newThresh = interp1(powGrid, threshGrid, freqBinPow, kind = 'linear', fill_value = 'extrap');
+        newThresh = matlab.interp1(powGrid, threshGrid, freqBinPow, kind = 'linear', fill_value = 'extrap');
 
         # Finally,extrapolating the thresholds that are a little beyond the original
         # frequeny range can result in negative thresholds. Here we copy the first
@@ -228,21 +237,21 @@ class Threshold:
         # isnanThreshLogic   = isnan(newThresh);
         # firstTrueThreshInd = find(~isnanThreshLogic, 1,'first');
         # lastTrueThreshInd  = find(~isnanThreshLogic, 1,'last');
-        isnanThreshLogic   = np.isnotnan(newThresh);
-        firstTrueThreshInd = matlab.find(isnanThreshLogic, 1, 'first')
-        lastTrueThreshInd  = matlab.find(isnanThreshLogic, 1, 'last')
+        isFiniteLogic       = np.isfinite(newThresh);
+        firstTrueThreshInd = matlab.find(isFiniteLogic, 1, 'first')
+        lastTrueThreshInd  = matlab.find(isFiniteLogic, 1, 'last')
 
         firstTrueThresh    = newThresh[firstTrueThreshInd];
         lastTrueThresh     = newThresh[lastTrueThreshInd];
 
         # newThresh(1:firstTrueThreshInd(1))  = firstTrueThresh; # The (1) call is needed by coder, as it doesn't know that the find call above will only produced a scalar output.
         # newThresh(lastTrueThreshInd(1):end) = lastTrueThresh; # The (1) call is needed by coder, as it doesn't know that the find call above will only produced a scalar output.
-        newThresh[0 : firstTrueThreshInd]   = firstTrueThresh
-        newThresh[ lastTrueThreshInd:]      = lastTrueThresh
+        newThresh[:firstTrueThreshInd]  = firstTrueThresh
+        newThresh[lastTrueThreshInd:]   = lastTrueThresh
         
         # self.thresh1W        = thresh;
         # self.threshVecCoarse = newThresh;
         # self.threshVecFine   = interp1(Wfm.stft.f,double(newThresh),Wfm.Wf,'linear','extrap');
-        self.thresh1W        = thresh.copy();
+        self.thresh1W        = deepcopy(thresh)
         self.threshVecCoarse = newThresh;
-        self.threshVecFine   = interp1(Wfm.stft.f, newThresh.astype(float), Wfm.Wf, kind = 'linear', fill_value = 'extrap');
+        self.threshVecFine   = matlab.interp1(Wfm.stft.f, newThresh.astype(float), Wfm.Wf, kind = 'linear', fill_value = 'extrap');

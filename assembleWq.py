@@ -82,5 +82,6 @@ def assembleWq(PRI_means_q: np.ndarray, PRI_jitters_q: np.ndarray, K: float):
     WqColInds   = WqColInds.ravel(order='F').astype(np.intc)
     WqElements  = np.ones(len(WqRowInds))
     Wq          = scipy.sparse.csr_array((WqElements, (WqRowInds, WqColInds)), dtype=np.float)
+    Wq.eliminate_zeros()
 
     return Wq

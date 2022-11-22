@@ -1,4 +1,4 @@
-from interp1 import interp1
+import matlab
 
 import math
 import numpy as np
@@ -35,8 +35,8 @@ def getTemplate(X, samples: int):
     # waveform.
     # tmplt_samps  = linspace(0,ceil(X.Fs*X.ps_pre.t_p),numel(X.ps_pre.tmplt));
     # output_samps = linspace(0,ceil(X.Fs*X.ps_pre.t_p),ceil(X.ps_pre.t_p*X.Fs));
-    tmplt_samps  = np.linspace(0, math.ceil(X.Fs * X.ps_pre.t_p), num = len(X.ps_pre.tmplt));
+    tmplt_samps  = np.linspace(0, math.ceil(X.Fs * X.ps_pre.t_p), num = matlab.numel(X.ps_pre.tmplt));
     output_samps = np.linspace(0, math.ceil(X.Fs * X.ps_pre.t_p), num = math.ceil(X.ps_pre.t_p * X.Fs));
 
-    return interp1(tmplt_samps, X.ps_pre.tmplt, output_samps);
+    return matlab.interp1(tmplt_samps, X.ps_pre.tmplt, output_samps);
 

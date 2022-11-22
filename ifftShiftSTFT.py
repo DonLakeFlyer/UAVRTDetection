@@ -52,7 +52,7 @@ def ifftShiftSTFT(x: np.ndarray):
     if x.ndim > 2:
         raise Exception("Only 1D and 2D are supported")
 
-    n = len(x)
+    n = matlab.numel(x)
     noCircshift = not math.fmod(n, 2)
 
     if x.ndim == 1:
@@ -60,10 +60,10 @@ def ifftShiftSTFT(x: np.ndarray):
         if noCircshift:
             return scipy.fft.ifftshift(x)
         else:
-            xout = np.roll(scipy.fft.ifftshift(x), -1)
+            xout = np.roll(scipy.fft.ifftshift(x), 1)
     else: 
         # matrix
         if noCircshift:
             return scipy.fft.ifftshift(x, axes = (1,))
         else:
-            xout = np.roll(scipy.fft.ifftshift(x, axes = (1,)), -1, axis = 1)
+            xout = np.roll(scipy.fft.ifftshift(x, axes = (1,)), 1, axis = 1)

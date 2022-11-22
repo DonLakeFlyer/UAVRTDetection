@@ -21,7 +21,6 @@ class CSingleUDPReceiver:
                 # No port on the other side
                 break
             else:
-                print(len(bytes))
                 if not len(bytes):
                     break
         self.rxSocket.setblocking(True)

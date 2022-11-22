@@ -58,7 +58,7 @@ def generatePulsePositionsMatrix(K: float, PRI_mean_value: np.ndarray, PRI_jitte
     for i_mean in range(num_PRI_means):
         for k in range(1, K):
             for i_jitter in range(num_PRI_jitters):
-                pulse_position_value[k, i_jitter, i_mean] = 1 + k * PRI_mean_value[i_mean] + PRI_jitter_value[i_jitter]
+                pulse_position_value[k, i_jitter, i_mean] = k * PRI_mean_value[i_mean] + PRI_jitter_value[i_jitter]
 
     # generate the pulse_position_matrix by considering
     # all possible combinations of the values;

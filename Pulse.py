@@ -27,15 +27,28 @@ class Pulse:
                     peakFreq:       float       = np.nan, 
                     freqStart:      float       = np.nan, 
                     freqEnd:        float       = np.nan):
-        self.amplitude      = amplitude         # A
-        self.yw             = yw                # yw
-        self.snr            = snr               # SNR
-        self.startTime      = startTime         # t_0
-        self.endTime        = endTime           # t_f
-        self.nextTimeRange  = nextTimeRange     # t_next
-        self.peakFreq       = peakFreq          # fp
-        self.freqStart      = freqStart         # fstart
-        self.freqEnd        = freqEnd           # fend
-        self.mode           = "unknown"
-        self.deteced        = False
-        self.confirmed      = False
+        self.A          = amplitude         # A
+        self.P          = self.A ** 2
+        self.yw         = yw                # yw
+        self.SNR        = snr               # SNR
+        self.t_0        = startTime         # t_0
+        self.t_f        = endTime           # t_f
+        self.t_next     = nextTimeRange     # t_next
+        self.fp         = peakFreq          # fp
+        self.fstart     = freqStart         # fstart
+        self.fend       = freqEnd           # fend
+        self.mode       = "TBD"
+        self.det_dec    = False
+        self.con_dec    = False
+
+    def pulseArrayAnyConfirmed(pulseArray):
+        for pulse in pulseArray.flat:
+            if pulse.con_dec:
+                return True
+        return False
+
+    def pulseArrayAnyDetected(pulseArray):
+        for pulse in pulseArray.flat:
+            if pulse.det_dec:
+                return True
+        return False

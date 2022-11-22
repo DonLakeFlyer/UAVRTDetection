@@ -171,9 +171,7 @@ def weightingMatrix(x_of_n_in: np.ndarray, Fs: float, zetas: np.ndarray, frequen
     # Shift everything so we use a negative frequencies
 
     # nyq_ind  = find(freqs == floor(Fs/2), 1, 'first');
-    # nyq_ind  = find(freqs == floor(Fs/2), 1, 'first');
-    nyq_ind  = matlab.find(freqs == math.floor(Fs/2), 1, 'first');
-    nyq_ind  = matlab.find(freqs == math.floor(Fs/2), 1, 'first');
+    nyq_ind  = matlab.find(freqs == math.floor(Fs/2), 1, 'first')
 
     # frequency_shift_amount = -freqs(end)-(Fs-freqs(end));
     frequency_shift_amount = -freqs[-1]-(Fs-freqs[-1]);
@@ -182,8 +180,8 @@ def weightingMatrix(x_of_n_in: np.ndarray, Fs: float, zetas: np.ndarray, frequen
     # wrapper = [zero_padding,frequency_shift_amount*ones(1,numel(freqs)-nyq_ind)];
     # Wf = wrapper' + freqs';
     Wf = np.zeros(nyq_ind)
-    np.append(Wf, frequency_shift_amount * np.ones(len(freqs) - nyq_ind))
-    np.append(Wf, freqs)
+    Wf = np.append(Wf, frequency_shift_amount * np.ones(matlab.numel(freqs) - nyq_ind))
+    Wf = Wf + freqs
     Wf.transpose()
 
     # Here we sort the output to set up to have an ascending order of frequency

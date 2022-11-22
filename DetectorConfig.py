@@ -1,4 +1,5 @@
 import configparser
+import numpy as np
 
 class DetectorConfig:
 #    %DETECTORCONFIG Class contains the information needed by the detector
@@ -44,6 +45,15 @@ class DetectorConfig:
         self.K                      = config[tagSection].getint("k")
         self.opMode                 = config[tagSection]["opMode"]
         self.falseAlarmProb         = config[tagSection].getfloat("falseAlarmProb")
+
+        excludedFreqsStart          = config[tagSection].getfloat("excldFreqsStart")
+        excludedFreqsStop           = config[tagSection].getfloat("excldFreqsStop")
+        if excludedFreqsStart is None:
+            excludedFreqsStart = np.inf;
+        if excludedFreqsStop is None:
+            excludedFreqsStop = -np.inf;
+        # self.excldFreqs = np.array([[ excludedFreqsStart, excludedFreqsStop ]])
+        self.excldFreqs = None
 
     def __str__(self): 
         return "DetectorConfig(%x): tagId:%d channelCenterFreqMHz:%f ipData:%s, portData:%d Fs:%f tp:%f tip:%f tipu:%f tipj:%f K:%d" % \

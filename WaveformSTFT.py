@@ -95,14 +95,18 @@ class WaveformSTFT:
         self.wind = scipy.signal.windows.boxcar(waveform_obj.n_w)
 
         # [S, self.f, local_time] = stft(waveform_obj.x,waveform_obj.Fs,'Window',self.wind,'OverlapLength',waveform_obj.n_ol,'FFTLength',waveform_obj.n_w);
-        print(waveform_obj)
         self.f, local_time, S = scipy.signal.stft(
                                         waveform_obj.x, 
-                                        waveform_obj.Fs,
-                                        window      = self.wind,
-                                        noverlap    = waveform_obj.n_ol,
-                                        nperseg     = waveform_obj.n_w,
-                                        nfft        = waveform_obj.n_w)
+                                        fs              = waveform_obj.Fs,
+                                        window          = self.wind,
+                                        noverlap        = waveform_obj.n_ol,
+                                        nperseg         = waveform_obj.n_w,
+                                        nfft            = waveform_obj.n_w,
+                                        boundary        = None,
+                                        return_onesided = False)
+        # if np.isnan(S).any():
+        #     print(np.count_nonzero(np.isnan(S)))
+        #     raise
 
         # self.S = double(S);#  Incoming x data in waveform is single precision, but sparse matrix multipliation later is only supported for double precision.
         # self.t = double(local_time)+waveform_obj.t_0; # Convert to global time of waveform. Double cast is needed because if x data in stft is single precision then the output t will be single as well.

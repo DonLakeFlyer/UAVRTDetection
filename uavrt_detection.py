@@ -4,11 +4,14 @@ from PulseStats         import PulseStats
 from Waveform           import Waveform
 from Threshold          import Threshold
 from CSingleUDPReceiver import CSingleUDPReceiver
+from Pulse              import Pulse
+import matlab
 
 import socket
 import math
 import numpy as np
 from pytictoc import TicToc
+from copy import *
 
 # function [] = updatebufferreadvariables(ps_input)
 def updateBufferReadVariables(Config: DetectorConfig, ps_input: PulseStats, stftOverlapFraction: float):
@@ -131,6 +134,7 @@ def uavrt_detection():
 
     print('Startup set 7 complete. Starting processing...')
 
+    pCount = 0
     while True:
         if resetBuffersFlag:
             asyncDataBuff.reset();
@@ -149,7 +153,7 @@ def uavrt_detection():
         framesReceived = framesReceived + 1;
         # timeVector     = timeStamp+1/Config.Fs*(0:(numel(iqData)-1)).';
         # timeStamp      = timeStamp + (numel(iqData) / Config.Fs);
-        timeVector     = timeStamp + 1 / Config.Fs * np.arange(len(iqData));
+        timeVector     = timeStamp + 1 / Config.Fs * np.arange(matlab.numel(iqData));
         timeStamp      = timeStamp + (len(iqData) / Config.Fs);
 
         # Write out data and time.
@@ -212,26 +216,29 @@ def uavrt_detection():
                 mode = 'D';
 
             if segmentsProcessed == 0:
-                X.thresh = X.thresh.makeNewThreshold(X);
+                X.thresh.generateThresholdValuesFromWaveform(X);
             else:
-                X.thresh = X.thresh.setThreshold(X, Xhold);
+                X.thresh.updateThresholdValuesIfNeeded(X, Xhold);
 
-            print('complete. Elapsed time: %f seconds ', tictoc.toc())
+            print('complete. Elapsed time: %f seconds ', tictoc.tocvalue())
 
             # fprintf('Time windows in S: # u ',int(size(X.stft.S,2)))
             print('Time windows in S: %d' % X.stft.S.shape[1])
 
             print('Finding pulses...')
             X.process(mode, 'most', Config.excldFreqs)
-            processingTime = tictoc.toc();
-            print('complete. Elapsed time: %f seconds ', tictoc.toc())
+            pCount += 1
+            if pCount == 5:
+                exit()
+            processingTime = tictoc.tocvalue();
+            print('complete. Elapsed time: %f seconds ' % tictoc.tocvalue())
 
             # #  PREP FOR NEXT LOOP
 
             # Latch/Release the frequency lock and setup the
             # suggested mode
             suggestedMode = X.ps_pos.mode;
-            pulsesConfirmed = np.ndarray.all([X.ps_pos.pl.con_dec]);
+            pulsesConfirmed = Pulse.pulseArrayAnyConfirmed(X.ps_pos.pl)
             if pulsesConfirmed:
                 fLock = True;
             # We only ever release if we are in softlock mode and
@@ -261,12 +268,12 @@ def uavrt_detection():
             tictoc.tic()
             # Prepare priori for next segment
             print('Updating priori...')
-            ps_pre = X.ps_pos.deepcopy();
+            ps_pre = deepcopy(X.ps_pos)
 
-            sampsFprKPulses, overlapSamples = updateBufferReadVariables(X.ps_pos);
-            print('complete. Elapsed time: %f seconds ', tictoc.toc())
+            sampsFprKPulses, overlapSamples = updateBufferReadVariables(Config, X.ps_pos, stftOverlapFraction)
+            print('complete. Elapsed time: %f seconds ' % tictoc.tocvalue())
 
-            Xhold = X.deepcopy()
+            Xhold = deepcopy(X)
 
             for j in range(len(ps_pre.pl)):
                 pulse = ps_pre.pl[j]

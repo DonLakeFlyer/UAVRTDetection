@@ -89,8 +89,8 @@ class PulseStats:
         self.t_ipu  = t_ipu
         self.t_ipj  = t_ipj
         self.fp     = fp
-        self.fstart = 0
-        self.fend   = 0
+        self.fstart = None
+        self.fend   = None
         self.tmplt  = tmplt
         self.mode   = 'D'
         self.pl     = None
@@ -103,15 +103,3 @@ class PulseStats:
 
     def __str__(self): 
         return "PulseStats(%x): t_p:%f t_ip:%f t_ipu:%f t_ipj:%f fp:%f" % (id(self), self.t_p, self.t_ip, self.t_ipu, self.t_ipj, self.fp)
-
-    def copy(self):
-        other = PulseStats(t_p = self.t_p, t_ip = self.t_ip, t_ipu = self.t_ipu, t_ipj = self.t_ipj, fp = self.fp)
-        other.fstart = self.fstart
-        other.fend   = self.fend
-        other.tmplt  = self.tmplt
-        other.mode   = self.mode
-        other.pl     = self.pl
-        other.clst   = self.clst
-        other.cmsk   = self.cmsk
-        other.cpki   = self.cpki
-        return other

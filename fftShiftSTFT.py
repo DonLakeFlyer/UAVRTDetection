@@ -56,7 +56,7 @@ def fftShiftSTFT(x: np.ndarray):
     #     xout = circshift(fftshift(x,dim2shift),-1,dim2shift);
     # end
 
-    n = len(x)
+    n = matlab.numel(x)
     noCircshift = not math.fmod(n, 2)
 
     if x.ndim == 1:
@@ -64,10 +64,10 @@ def fftShiftSTFT(x: np.ndarray):
         if noCircshift:
             return scipy.fft.fftshift(x)
         else:
-            xout = np.roll(scipy.fft.fftshift(x), -1)
+            xout = np.roll(scipy.fft.fftshift(x), 1)
     else: 
         # matrix
         if noCircshift:
             return scipy.fft.fftshift(x, axes = (1,))
         else:
-            xout = np.roll(scipy.fft.fftshift(x, axes = (1,)), -1, axis = 1)
+            xout = np.roll(scipy.fft.fftshift(x, axes = (1,)), 1, axis = 1)
